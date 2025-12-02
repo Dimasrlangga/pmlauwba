@@ -1,7 +1,6 @@
 <?php
 // Lokasi: backend/controllers/LaporanPresensiController.php
-require_once APP_ROOT . '/helpers/auth.php'; // tambahkan ini
-requireBackendAuth();
+
 // PERBAIKAN 1: Path Model harus ke root, bukan app/models
 require_once APP_ROOT . '/models/Presensi.php';
 

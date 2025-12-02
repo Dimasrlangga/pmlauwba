@@ -1,7 +1,6 @@
 <?php
 // Lokasi: backend/controllers/SuperuserController.php
-require_once APP_ROOT . '/helpers/auth.php'; // tambahkan ini
-requireBackendAuth();
+
 // Pastikan APP_ROOT sudah didefinisikan di index.php root
 // Require model User (sesuaikan path sesuai struktur projectmu — saya asumsikan app/models/User.php)
 require_once APP_ROOT . '/models/User.php';

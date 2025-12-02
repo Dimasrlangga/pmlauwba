@@ -14,7 +14,6 @@ if (!file_exists(APP_ROOT . '/database.php')) {
     die("Error: File database.php tidak ditemukan di root folder.");
 }
 require_once APP_ROOT . '/database.php';
-require_once APP_ROOT . '/helpers/auth.php';
 
 // ==========================================================
 // 4. LOAD MODELS & CONTROLLERS
@@ -206,16 +205,8 @@ $componentPath = APP_ROOT . '/frontend/views/component';
 
             // --- Halaman Backend (Admin) ---
             case 'dashboard_backend':
-                requireBackendAuth();
                 ob_clean();
                 $superuserController->index();
-                exit;
-                break;
-
-            case 'presensi_backend':
-                requireBackendAuth();
-                ob_clean();
-                $presensiController->index();
                 exit;
                 break;
 

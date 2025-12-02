@@ -1,7 +1,6 @@
 <?php
 // Lokasi: backend/controllers/PresensiController.php
-require_once APP_ROOT . '/helpers/auth.php'; // tambahkan ini
-requireBackendAuth();
+
 if (!defined('APP_ROOT')) {
     // Harus didefinisikan di index.php root. Jika belum, hitung dari lokasi file.
     $ar = realpath(__DIR__ . '/../../');
