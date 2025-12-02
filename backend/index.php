@@ -1,5 +1,135 @@
+<?php
+session_start();
+
+// 1. Definisi Root Path & Assets
+define('APP_ROOT', dirname(__DIR__)); 
+$assets = "http://localhost/pmlauwba/backend"; 
+
+// 2. Koneksi Database
+require_once APP_ROOT . '/database.php'; 
+
+// 3. Router Hybrid (Mendukung ?page=... dan ?url=...)
+// Ini penting karena kode view Anda menggunakan ?url=
+$page = $_GET['page'] ?? $_GET['url'] ?? 'dashboard_backend';
+
+// 4. Force Login
+if (!isset($_SESSION['logged_in']) && $page !== 'login' && $page !== 'auth_process') {
+    header("Location: ?page=login");
+    exit; 
+}
+
+// 5. Load Controllers
+require_once 'controllers/SuperuserController.php';
+require_once 'controllers/AuthController.php';
+
+$authController = new AuthController($koneksi);
+$superuserController = new SuperuserController($koneksi);
+
+// 6. Switch Page Controller
+switch ($page) {
+    // --- AUTHENTICATION ---
+    case 'login':
+        $authController->showBackendLoginForm();
+        exit; 
+    case 'auth_process':
+        $authController->processLogin();
+        exit;
+    case 'logout':
+        $authController->logout();
+        exit;
+
+    // --- USER MANAGEMENT (SUPERUSER) ---
+    case 'kelola_user':
+        $superuserController->kelolaUser();
+        exit;
+    case 'tambah_user':
+        $superuserController->showTambahForm();
+        exit;
+    case 'proses_tambah_user':
+        $superuserController->prosesTambahUser();
+        exit;
+    case 'edit_user':
+        $superuserController->showEditForm();
+        exit;
+    case 'proses_edit_user':
+        $superuserController->prosesEditUser();
+        exit;
+    case 'hapus_user':
+        $superuserController->prosesHapusUser();
+        exit;
+
+    // --- HALAMAN UTAMA (SESUAI REQUEST ANDA) ---
+    
+    // 1. PRESENSI
+    case 'presensi':
+        require_once 'views/pages/presensi/presensi.php';
+        exit;
+    case 'proses_presensi_keluar_backend':
+        // Tambahkan logika backend presensi keluar di sini atau di Controller
+        // Contoh: $superuserController->prosesPresensiKeluar();
+        header("Location: ?url=presensi&success=Presensi keluar berhasil");
+        exit;
+    
+    // 2. KELOLA PROGRESS
+    case 'kelola_progress':
+        // Pastikan file ini ada, jika belum buat folder dan filenya
+        $view = 'views/pages/kelola_progress/kelola_progress.php';
+        if(file_exists($view)) include $view;
+        else echo "<h3>Halaman Kelola Progress belum dibuat (views/pages/kelola_progress/kelola_progress.php)</h3>";
+        exit;
+
+    // 3. LOG HARIAN
+    case 'log_harian':
+        require_once 'views/pages/log_harian/log_harian.php';
+        exit;
+    case 'proses_simpan_log':
+        // Logika simpan log (bisa dipindah ke Controller nanti)
+        // Saat ini redirect dulu agar tidak error
+        header("Location: ?url=log_harian&success=Log berhasil disimpan (Logika perlu ditambahkan)");
+        exit;
+    case 'proses_hapus_log':
+        header("Location: ?url=log_harian&success=Log dihapus (Logika perlu ditambahkan)");
+        exit;
+
+    // 4. KELOLA IZIN
+    case 'kelola_izin':
+        require_once 'views/pages/kelola_izin/kelola_izin.php';
+        exit;
+    case 'proses_approval_izin':
+        // Logika approval (approve/reject)
+        header("Location: ?url=kelola_izin&success=Status izin diperbarui (Logika perlu ditambahkan)");
+        exit;
+    case 'hapus_izin':
+        header("Location: ?url=kelola_izin&success=Data izin dihapus");
+        exit;
+
+    // 5. LAPORAN PRESENSI
+    case 'laporan_presensi':
+        require_once 'views/pages/laporan_presensi/laporan_presensi.php';
+        exit;
+    case 'hapus_presensi':
+        header("Location: ?url=laporan_presensi&success=Data presensi dihapus");
+        exit;
+
+    // --- DASHBOARD ---
+    case 'dashboard_backend':
+        // Biarkan lanjut ke bawah untuk load Dashboard HTML
+        break;
+        
+    default:
+        // Jika halaman tidak ditemukan, kembalikan ke dashboard
+        // header("Location: ?page=dashboard_backend");
+        echo "<script>alert('Halaman tidak ditemukan: $page'); window.location='?page=dashboard_backend';</script>";
+        exit;
+}
+
+// --- BATAS LOGIKA PHP --- 
+// HTML di bawah ini HANYA AKAN TAMPIL jika $page == 'dashboard_backend'
+?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <?php include 'views/component/header.php'; ?>
 
 <body>
@@ -17,7 +147,7 @@
                                 src="<?= $assets ?>/assets/img/kaiadmin/logo_light.svg"
                                 alt="navbar brand"
                                 class="navbar-brand"
-                                height="20" />  
+                                height="20" />
                         </a>
                         <div class="nav-toggle">
                             <button class="btn btn-toggle toggle-sidebar">
@@ -38,274 +168,27 @@
 
 
                 <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-                    <li
-                        class="nav-item topbar-icon dropdown hidden-caret d-flex d-lg-none">
-                        <a
-                            class="nav-link dropdown-toggle"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            role="button"
-                            aria-expanded="false"
-                            aria-haspopup="true">
+                    <li class="nav-item topbar-icon dropdown hidden-caret d-flex d-lg-none">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false" aria-haspopup="true">
                             <i class="fa fa-search"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-search animated fadeIn">
                             <form class="navbar-left navbar-form nav-search">
                                 <div class="input-group">
-                                    <input
-                                        type="text"
-                                        placeholder="Search ..."
-                                        class="form-control" />
+                                    <input type="text" placeholder="Search ..." class="form-control" />
                                 </div>
                             </form>
                         </ul>
                     </li>
-                    <li class="nav-item topbar-icon dropdown hidden-caret">
-                        <a
-                            class="nav-link dropdown-toggle"
-                            href="#"
-                            id="messageDropdown"
-                            role="button"
-                            data-bs-toggle="dropdown"
-                            aria-haspopup="true"
-                            aria-expanded="false">
-                            <i class="fa fa-envelope"></i>
-                        </a>
-                        <ul
-                            class="dropdown-menu messages-notif-box animated fadeIn"
-                            aria-labelledby="messageDropdown">
-                            <li>
-                                <div
-                                    class="dropdown-title d-flex justify-content-between align-items-center">
-                                    Messages
-                                    <a href="#" class="small">Mark all as read</a>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="message-notif-scroll scrollbar-outer">
-                                    <div class="notif-center">
-                                        <a href="#">
-                                            <div class="notif-img">
-                                                <img
-                                                    src="<?= $assets ?>/assets/img/jm_denis.jpg"
-                                                    alt="Img Profile" />
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="subject">Jimmy Denis</span>
-                                                <span class="block"> How are you ? </span>
-                                                <span class="time">5 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-img">
-                                                <img
-                                                    src="<?= $assets ?>/assets/img/chadengle.jpg"
-                                                    alt="Img Profile" />
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="subject">Chad</span>
-                                                <span class="block"> Ok, Thanks ! </span>
-                                                <span class="time">12 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-img">
-                                                <img
-                                                    src="<?= $assets ?>/assets/img/mlane.jpg"
-                                                    alt="Img Profile" />
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="subject">Jhon Doe</span>
-                                                <span class="block">
-                                                    Ready for the meeting today...
-                                                </span>
-                                                <span class="time">12 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-img">
-                                                <img
-                                                    src="<?= $assets ?>/assets/img/talha.jpg"
-                                                    alt="Img Profile" />
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="subject">Talha</span>
-                                                <span class="block"> Hi, Apa Kabar ? </span>
-                                                <span class="time">17 minutes ago</span>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </div>
-                            </li>
-                            <li>
-                                <a class="see-all" href="javascript:void(0);">See all messages<i class="fa fa-angle-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="nav-item topbar-icon dropdown hidden-caret">
-                        <a
-                            class="nav-link dropdown-toggle"
-                            href="#"
-                            id="notifDropdown"
-                            role="button"
-                            data-bs-toggle="dropdown"
-                            aria-haspopup="true"
-                            aria-expanded="false">
-                            <i class="fa fa-bell"></i>
-                            <span class="notification">4</span>
-                        </a>
-                        <ul
-                            class="dropdown-menu notif-box animated fadeIn"
-                            aria-labelledby="notifDropdown">
-                            <li>
-                                <div class="dropdown-title">
-                                    You have 4 new notification
-                                </div>
-                            </li>
-                            <li>
-                                <div class="notif-scroll scrollbar-outer">
-                                    <div class="notif-center">
-                                        <a href="#">
-                                            <div class="notif-icon notif-primary">
-                                                <i class="fa fa-user-plus"></i>
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="block"> New user registered </span>
-                                                <span class="time">5 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-icon notif-success">
-                                                <i class="fa fa-comment"></i>
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="block">
-                                                    Rahmad commented on Admin
-                                                </span>
-                                                <span class="time">12 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-img">
-                                                <img
-                                                    src="<?= $assets ?>/assets/img/profile2.jpg"
-                                                    alt="Img Profile" />
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="block">
-                                                    Reza send messages to you
-                                                </span>
-                                                <span class="time">12 minutes ago</span>
-                                            </div>
-                                        </a>
-                                        <a href="#">
-                                            <div class="notif-icon notif-danger">
-                                                <i class="fa fa-heart"></i>
-                                            </div>
-                                            <div class="notif-content">
-                                                <span class="block"> Farrah liked Admin </span>
-                                                <span class="time">17 minutes ago</span>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </div>
-                            </li>
-                            <li>
-                                <a class="see-all" href="javascript:void(0);">See all notifications<i class="fa fa-angle-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="nav-item topbar-icon dropdown hidden-caret">
-                        <a
-                            class="nav-link"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            aria-expanded="false">
-                            <i class="fas fa-layer-group"></i>
-                        </a>
-                        <div class="dropdown-menu quick-actions animated fadeIn">
-                            <div class="quick-actions-header">
-                                <span class="title mb-1">Quick Actions</span>
-                                <span class="subtitle op-7">Shortcuts</span>
-                            </div>
-                            <div class="quick-actions-scroll scrollbar-outer">
-                                <div class="quick-actions-items">
-                                    <div class="row m-0">
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div class="avatar-item bg-danger rounded-circle">
-                                                    <i class="far fa-calendar-alt"></i>
-                                                </div>
-                                                <span class="text">Calendar</span>
-                                            </div>
-                                        </a>
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div
-                                                    class="avatar-item bg-warning rounded-circle">
-                                                    <i class="fas fa-map"></i>
-                                                </div>
-                                                <span class="text">Maps</span>
-                                            </div>
-                                        </a>
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div class="avatar-item bg-info rounded-circle">
-                                                    <i class="fas fa-file-excel"></i>
-                                                </div>
-                                                <span class="text">Reports</span>
-                                            </div>
-                                        </a>
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div
-                                                    class="avatar-item bg-success rounded-circle">
-                                                    <i class="fas fa-envelope"></i>
-                                                </div>
-                                                <span class="text">Emails</span>
-                                            </div>
-                                        </a>
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div
-                                                    class="avatar-item bg-primary rounded-circle">
-                                                    <i class="fas fa-file-invoice-dollar"></i>
-                                                </div>
-                                                <span class="text">Invoice</span>
-                                            </div>
-                                        </a>
-                                        <a class="col-6 col-md-4 p-0" href="#">
-                                            <div class="quick-actions-item">
-                                                <div
-                                                    class="avatar-item bg-secondary rounded-circle">
-                                                    <i class="fas fa-credit-card"></i>
-                                                </div>
-                                                <span class="text">Payments</span>
-                                            </div>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
 
                     <li class="nav-item topbar-user dropdown hidden-caret">
-                        <a
-                            class="dropdown-toggle profile-pic"
-                            data-bs-toggle="dropdown"
-                            href="#"
-                            aria-expanded="false">
+                        <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                             <div class="avatar-sm">
-                                <img
-                                    src="<?= $assets ?>/assets/img/profile.jpg"
-                                    alt="..."
-                                    class="avatar-img rounded-circle" />
+                                <img src="<?= $assets ?>/assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
                             </div>
                             <span class="profile-username">
                                 <span class="op-7">Hi,</span>
-                                <span class="fw-bold">Hizrian</span>
+                                <span class="fw-bold"><?= $_SESSION['nama_lengkap']; ?></span>
                             </span>
                         </a>
                         <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -313,17 +196,12 @@
                                 <li>
                                     <div class="user-box">
                                         <div class="avatar-lg">
-                                            <img
-                                                src="<?= $assets ?>/assets/img/profile.jpg"
-                                                alt="image profile"
-                                                class="avatar-img rounded" />
+                                            <img src="<?= $assets ?>/assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
                                         </div>
                                         <div class="u-text">
-                                            <h4>Hizrian</h4>
-                                            <p class="text-muted">hello@example.com</p>
-                                            <a
-                                                href="profile.html"
-                                                class="btn btn-xs btn-secondary btn-sm">View Profile</a>
+                                            <h4><?= $_SESSION['nama_lengkap']; ?></h4>
+                                            <p class="text-muted"><?= ucfirst($_SESSION['role']); ?></p>
+                                            <a href="profile.html" class="btn btn-xs btn-secondary btn-sm">View Profile</a>
                                         </div>
                                     </div>
                                 </li>
@@ -335,7 +213,8 @@
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="#">Account Setting</a>
                                     <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item" href="#">Logout</a>
+
+                                    <a class="dropdown-item" href="?page=logout">Logout</a>
                                 </li>
                             </div>
                         </ul>
@@ -522,126 +401,28 @@
                         </div>
                     </div>
                 </div>
-                <!-- <div class="row">
+                <div class="row">
                     <div class="col-md-12">
                         <div class="card card-round">
                             <div class="card-header">
                                 <div class="card-head-row card-tools-still-right">
                                     <h4 class="card-title">Users Geolocation</h4>
-                                    <div class="card-tools">
-                                        <button
-                                            class="btn btn-icon btn-link btn-primary btn-xs">
-                                            <span class="fa fa-angle-down"></span>
-                                        </button>
-                                        <button
-                                            class="btn btn-icon btn-link btn-primary btn-xs btn-refresh-card">
-                                            <span class="fa fa-sync-alt"></span>
-                                        </button>
-                                        <button
-                                            class="btn btn-icon btn-link btn-primary btn-xs">
-                                            <span class="fa fa-times"></span>
-                                        </button>
-                                    </div>
                                 </div>
-                                <p class="card-category">
-                                    Map of the distribution of users around the world
-                                </p>
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="table-responsive table-hover table-sales">
-                                            <table class="table">
-                                                <tbody>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/id.png"
-                                                                    alt="indonesia" />
-                                                            </div>
-                                                        </td>
-                                                        <td>Indonesia</td>
-                                                        <td class="text-end">2.320</td>
-                                                        <td class="text-end">42.18%</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/us.png"
-                                                                    alt="united states" />
-                                                            </div>
-                                                        </td>
-                                                        <td>USA</td>
-                                                        <td class="text-end">240</td>
-                                                        <td class="text-end">4.36%</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/au.png"
-                                                                    alt="australia" />
-                                                            </div>
-                                                        </td>
-                                                        <td>Australia</td>
-                                                        <td class="text-end">119</td>
-                                                        <td class="text-end">2.16%</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/ru.png"
-                                                                    alt="russia" />
-                                                            </div>
-                                                        </td>
-                                                        <td>Russia</td>
-                                                        <td class="text-end">1.081</td>
-                                                        <td class="text-end">19.65%</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/cn.png"
-                                                                    alt="china" />
-                                                            </div>
-                                                        </td>
-                                                        <td>China</td>
-                                                        <td class="text-end">1.100</td>
-                                                        <td class="text-end">20%</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <div class="flag">
-                                                                <img
-                                                                    src="<?= $assets ?>/assets/img/flags/br.png"
-                                                                    alt="brazil" />
-                                                            </div>
-                                                        </td>
-                                                        <td>Brasil</td>
-                                                        <td class="text-end">640</td>
-                                                        <td class="text-end">11.63%</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mapcontainer">
-                                            <div
-                                                id="world-map"
-                                                class="w-100"
-                                                style="height: 300px"></div>
+                                            <div id="world-map" class="w-100" style="height: 300px"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div> -->
+                </div>
                 <div class="row">
                     <!-- <div class="col-md-4">
                         <div class="card card-round">
@@ -923,7 +704,7 @@
                 </div>
             </div>
         </div>
-    <?php include 'views/component/footer.php'; ?>
+        <?php include 'views/component/footer.php'; ?>
 
     </div>
 
@@ -1089,7 +870,7 @@
     </div>
     <!-- End Custom template -->
     </div>
-<?php include 'views/component/script.php'; ?>
+    <?php include 'views/component/script.php'; ?>
 </body>
 
 </html>
