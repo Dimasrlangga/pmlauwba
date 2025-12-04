@@ -22,10 +22,12 @@ if (!isset($_SESSION['logged_in']) && $page !== 'login' && $page !== 'auth_proce
 require_once 'controllers/SuperuserController.php';
 require_once 'controllers/AuthController.php';
 require_once 'controllers/LogHarianController.php'; // TAMBAHAN: Controller Log Harian
+require_once 'controllers/LaporanPresensiController.php';
 
 $authController = new AuthController($koneksi);
 $superuserController = new SuperuserController($koneksi);
 $logHarianController = new LogHarianController($koneksi); // TAMBAHAN: Inisialisasi
+$laporanPresensiController = new LaporanPresensiController($koneksi);
 
 // ==========================================
 // FUNGSI BANTUAN (HELPER)
@@ -126,6 +128,34 @@ switch ($page) {
     case 'laporan_presensi':
         require_once 'views/pages/laporan_presensi/laporan_presensi.php';
         exit;
+
+        // --- LAPORAN PRESENSI ---
+    case 'laporan_presensi':
+        // Tampilkan halaman laporan presensi via controller
+        $laporanPresensiController->index();
+        exit;
+
+    case 'edit_presensi':
+        // Menampilkan form edit (GET), pastikan hanya admin/superuser
+        $laporanPresensiController->showEditForm();
+        exit;
+
+    case 'proses_edit_presensi':
+        // Proses update presensi (POST)
+        $laporanPresensiController->prosesEdit();
+        exit;
+
+    case 'proses_hapus_presensi':
+        // Proses hapus presensi (POST) — direkomendasikan
+        $laporanPresensiController->prosesHapus();
+        exit;
+
+    // Opsional: dukung juga route GET lama (jaga kompatibilitas)
+    case 'hapus_presensi':
+        // Jika Anda masih menggunakan link GET (tidak direkomendasikan), ini akan memanggil hapus
+        $laporanPresensiController->prosesHapus();
+        exit;
+
 
     // --- DASHBOARD (View Logic) ---
     case 'dashboard_backend':

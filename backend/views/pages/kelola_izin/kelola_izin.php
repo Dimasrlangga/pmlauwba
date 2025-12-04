@@ -79,6 +79,65 @@ if (file_exists($navbarFile)) {
 if (file_exists($sidebarFile)) include $sidebarFile;
 ?>
 
+<!-- Print-only CSS: sembunyikan elemen non-tabel saat cetak -->
+<style>
+    @media print {
+
+        .sidebar,
+        .main-sidebar,
+        .navbar,
+        .header,
+        .page-header,
+        .breadcrumbs,
+        .card-header .btn,
+        .btn,
+        footer,
+        .footer,
+        .nav-home,
+        .topbar {
+            display: none !important;
+        }
+
+        .main-panel,
+        .container,
+        .page-inner,
+        .card,
+        .card-body,
+        .table-responsive {
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            width: 100% !important;
+        }
+
+        table {
+            font-size: 12pt !important;
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd !important;
+            padding: 8px !important;
+        }
+
+        .dataTables_length,
+        .dataTables_filter,
+        .dataTables_info,
+        .dataTables_paginate,
+        #myChartLegend {
+            display: none !important;
+        }
+
+        a::after {
+            content: none !important;
+        }
+    }
+</style>
+
+
 <div class="main-panel">
     <div class="container">
         <div class="page-inner">
@@ -107,10 +166,13 @@ if (file_exists($sidebarFile)) include $sidebarFile;
                         <div class="card-header">
                             <div class="card-title">Daftar Pengajuan Masuk</div>
                             <p class="card-category">Setujui atau tolak pengajuan yang masuk dari peserta.</p>
+                            <button class="btn btn-primary btn-round ms-auto" onclick="printOnlyTable('izin-table-container', 'Laporan Izin & Sakit')">
+                            <i class="fa fa-print"></i> Cetak Laporan
+                        </button>
                         </div>
 
                         <div class="card-body">
-                            <div class="table-responsive">
+                            <div class="table-responsive" id="izin-table-container">
                                 <table class="datatable table table-striped table-hover" id="tabel-izin">
                                     <thead>
                                         <tr>
@@ -126,7 +188,7 @@ if (file_exists($sidebarFile)) include $sidebarFile;
                                     </thead>
                                     <tbody>
                                         <?php if (!empty($daftar_pengajuan)): $no = 1; ?>
-                                            <?php foreach ($daftar_pengajuan as $izin): 
+                                            <?php foreach ($daftar_pengajuan as $izin):
                                                 $id_izin = intval($izin['id_izin'] ?? 0);
                                                 $status = $izin['status_approval'] ?? 'pending';
                                             ?>
@@ -156,7 +218,7 @@ if (file_exists($sidebarFile)) include $sidebarFile;
                                                         <?php endif; ?>
                                                     </td>
                                                     <td>
-                                                        <?php if ($status === 'pending' && in_array($role_user, ['superuser','admin'])): ?>
+                                                        <?php if ($status === 'pending' && in_array($role_user, ['superuser', 'admin'])): ?>
                                                             <div class="form-button-action">
                                                                 <a href="?url=proses_approval_izin&id=<?= $id_izin ?>&status=disetujui" class="btn btn-link btn-success btn-lg" onclick="return confirm('Setujui izin ini?');" title="Setujui"><i class="fa fa-check"></i></a>
                                                                 <a href="?url=proses_approval_izin&id=<?= $id_izin ?>&status=ditolak" class="btn btn-link btn-danger btn-lg" onclick="return confirm('Tolak izin ini?');" title="Tolak"><i class="fa fa-times"></i></a>
@@ -176,7 +238,9 @@ if (file_exists($sidebarFile)) include $sidebarFile;
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr><td colspan="8" class="text-center text-muted">Belum ada data pengajuan.</td></tr>
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted">Belum ada data pengajuan.</td>
+                                            </tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
@@ -200,15 +264,97 @@ if (file_exists($sidebarFile)) include $sidebarFile;
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
 <script>
-    $(document).ready(function(){
+    $(document).ready(function() {
         $('#tabel-izin').DataTable({
             "pageLength": 10,
             "order": [],
             "language": {
                 "emptyTable": "Belum ada data pengajuan",
                 "search": "Cari:",
-                "paginate": {"previous": "Sebelumnya","next":"Selanjutnya"}
+                "paginate": {
+                    "previous": "Sebelumnya",
+                    "next": "Selanjutnya"
+                }
             }
         });
     });
+</script>
+
+<script>
+    /**
+     * Ambil HTML tabel dari containerId (fallback ke .table-responsive)
+     */
+    function getTableHtml(containerId) {
+        var tableContainer = containerId ? document.getElementById(containerId) : null;
+        if (!tableContainer) tableContainer = document.querySelector('.table-responsive');
+        if (!tableContainer) return null;
+
+        // clone supaya tidak merusak DOM asli
+        var clone = tableContainer.cloneNode(true);
+
+        // remove DataTables controls di clone
+        var controls = clone.querySelectorAll('.dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_paginate');
+        controls.forEach(function(c) {
+            c.parentNode && c.parentNode.removeChild(c);
+        });
+
+        // hapus style inline yang mungkin mengganggu cetakan
+        clone.querySelectorAll('[style]').forEach(function(el) {
+            el.removeAttribute('style');
+        });
+
+        return clone.innerHTML;
+    }
+
+    /**
+     * Buka jendela cetak berisi hanya tabel yang diinginkan
+     * containerId: id dari .table-responsive yang akan dicetak
+     * titleText: judul laporan pada halaman cetak
+     */
+    function printOnlyTable(containerId, titleText) {
+        var tableHtml = getTableHtml(containerId);
+        if (!tableHtml) {
+            alert('Tabel tidak ditemukan untuk dicetak.');
+            return;
+        }
+        titleText = titleText || 'Laporan';
+
+        var printWindow = window.open('', '_blank', 'width=1200,height=800');
+        var doc = printWindow.document;
+        doc.open();
+        doc.write(`
+        <!doctype html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>${titleText}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; color: #222; }
+                .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+                .header .title { font-size:18px; font-weight:700; }
+                .meta { font-size:12px; color:#666; }
+                table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+                table th, table td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: middle; }
+                thead th { background: #f6f6f6; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="title">${titleText}</div>
+                <div class="meta">Dicetak: ${new Date().toLocaleString()}</div>
+            </div>
+            <div>${tableHtml}</div>
+        </body>
+        </html>
+    `);
+        doc.close();
+
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+        };
+    }
 </script>

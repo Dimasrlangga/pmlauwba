@@ -4,12 +4,14 @@
 // PERBAIKAN 1: Path Model harus ke root, bukan app/models
 require_once APP_ROOT . '/models/Presensi.php';
 
-class LaporanPresensiController {
-    
+class LaporanPresensiController
+{
+
     private $koneksi;
     private $presensiModel;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->koneksi = $db;
         $this->presensiModel = new Presensi($db);
     }
@@ -18,7 +20,8 @@ class LaporanPresensiController {
      * Menampilkan halaman Laporan Presensi (Read)
      * Akses: Superuser, Admin, Manager
      */
-    public function index() {
+    public function index()
+    {
         // Keamanan: Cek role
         $allowed_roles = ['superuser', 'admin', 'manager'];
         if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], $allowed_roles)) {
@@ -40,7 +43,8 @@ class LaporanPresensiController {
      * Menampilkan halaman Form Edit Presensi (Update)
      * Akses: Superuser, Admin
      */
-    public function showEditForm() {
+    public function showEditForm()
+    {
         // Keamanan: Cek role
         $allowed_roles = ['superuser', 'admin'];
         if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], $allowed_roles)) {
@@ -49,7 +53,7 @@ class LaporanPresensiController {
         }
 
         $judul_halaman = "Edit Catatan Presensi";
-        
+
         // 1. Ambil ID dari URL
         $id_presensi = $_GET['id'] ?? 0;
 
@@ -64,7 +68,8 @@ class LaporanPresensiController {
      * Memproses Form Edit Presensi (Update)
      * Akses: Superuser, Admin
      */
-    public function prosesEdit() {
+    public function prosesEdit()
+    {
         // Keamanan: Cek role
         $allowed_roles = ['superuser', 'admin'];
         if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], $allowed_roles)) {
@@ -74,7 +79,7 @@ class LaporanPresensiController {
 
         // 1. Validasi data POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_presensi'])) {
-            
+
             $id_presensi = $_POST['id_presensi'];
 
             // 2. Siapkan data
@@ -97,7 +102,7 @@ class LaporanPresensiController {
             }
             exit;
         }
-        
+
         header("Location: ?page=laporan_presensi");
         exit;
     }
@@ -106,7 +111,8 @@ class LaporanPresensiController {
      * Memproses Hapus Presensi (Delete)
      * Akses: Superuser, Admin
      */
-    public function prosesHapus() {
+    public function prosesHapus()
+    {
         // Keamanan: Cek role
         $allowed_roles = ['superuser', 'admin'];
         if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], $allowed_roles)) {
@@ -114,18 +120,25 @@ class LaporanPresensiController {
             exit;
         }
 
-        $id_presensi = $_GET['id'] ?? 0;
+        // Pastikan request method POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: ?page=laporan_presensi&error=Metode tidak diperbolehkan");
+            exit;
+        }
 
-        if ($id_presensi > 0) {
-            if ($this->presensiModel->delete($id_presensi)) {
-                header("Location: ?page=laporan_presensi&success=Data presensi berhasil dihapus.");
-            } else {
-                header("Location: ?page=laporan_presensi&error=Gagal menghapus data.");
-            }
-        } else {
+        // Ambil dan validasi id dari POST
+        $id_presensi = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        if ($id_presensi <= 0) {
             header("Location: ?page=laporan_presensi&error=ID tidak valid.");
+            exit;
+        }
+
+        // Panggil model untuk hapus
+        if ($this->presensiModel->delete($id_presensi)) {
+            header("Location: ?page=laporan_presensi&success=Data presensi berhasil dihapus.");
+        } else {
+            header("Location: ?page=laporan_presensi&error=Gagal menghapus data. Silakan coba lagi.");
         }
         exit;
     }
 }
-?>

@@ -1,5 +1,5 @@
 <?php
-// Lokasi: app/models/Presensi.php
+// Lokasi: models/Presensi.php
 
 class Presensi {
     private $koneksi;
