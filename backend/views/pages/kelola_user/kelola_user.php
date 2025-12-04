@@ -70,6 +70,7 @@ if (!isset($data_users)) {
 
 // 3) Path component (header/sidebar/footer)
 $headerPath  = APP_ROOT . '/backend/views/component/header.php';
+$navbarPath  = APP_ROOT . '/backend/views/component/navbar.php';
 $sidebarPath = APP_ROOT . '/backend/views/component/sidebar.php';
 $footerPath  = APP_ROOT . '/backend/views/component/footer.php';
 
@@ -77,6 +78,10 @@ $footerPath  = APP_ROOT . '/backend/views/component/footer.php';
 if (file_exists($headerPath)) include $headerPath;
 else {
     echo "<!-- header not found: {$headerPath} -->";
+}
+if (file_exists($navbarPath)) include $navbarPath;
+else {
+    echo "<!-- navbar not found: {$navbarPath} -->";
 }
 if (file_exists($sidebarPath)) include $sidebarPath;
 else {

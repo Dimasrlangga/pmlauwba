@@ -1,61 +1,81 @@
 <?php
-// Lokasi: app/views/backend/views/pages/laporan_presensi/laporan_presensi.php
+// File: backend/views/pages/laporan_presensi/laporan_presensi.php
+// Versi aman: include via APP_ROOT, fallback koneksi, safe output
 
-// 1. Panggil Header
-include '../../component/header.php';
-
-// 2. KONEKSI DATABASE (Perbaikan Error Include)
-if (file_exists('database.php')) {
-    include 'database.php';
-} else {
-    // Koneksi manual jika file tidak ada
-    $koneksi = mysqli_connect("localhost", "root", "", "pmlauwba");
-    if (!$koneksi) { die("Koneksi database gagal: " . mysqli_connect_error()); }
+// Pastikan APP_ROOT didefinisikan (biasanya di index.php root)
+if (!defined('APP_ROOT')) {
+    $maybeRoot = realpath(__DIR__ . '/../../../../');
+    if ($maybeRoot) define('APP_ROOT', $maybeRoot);
+    else define('APP_ROOT', __DIR__);
 }
 
-// 3. Inisialisasi Variabel
-$judul_halaman = "Laporan Presensi Keseluruhan";
-$role_user     = $_SESSION['role'] ?? 'guest';
+// Pastikan session aktif
+if (!session_id()) session_start();
 
-// 4. QUERY AMBIL DATA
-// Mengambil data presensi + nama user
-$query = "SELECT p.*, u.nama_lengkap 
-          FROM presensi p 
-          JOIN users u ON p.id_user = u.id_user 
-          ORDER BY p.tanggal DESC, p.waktu_masuk DESC";
+// Paths component
+$componentDir = APP_ROOT . '/backend/views/component';
+$headerFile    = $componentDir . '/header.php';
+$navbarFile    = $componentDir . '/navbar.php';
+$sidebarFile   = $componentDir . '/sidebar.php';
+$footerFile    = $componentDir . '/footer.php';
 
-$result = mysqli_query($koneksi, $query);
-$daftar_presensi = [];
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $daftar_presensi[] = $row;
+// Koneksi DB: gunakan $koneksi dari controller kalau tersedia, jika tidak cari database.php di root
+if (!isset($koneksi) || !($koneksi instanceof mysqli)) {
+    $dbFile = APP_ROOT . '/database.php';
+    if (file_exists($dbFile)) {
+        include_once $dbFile; // file ini diharapkan mendefinisikan $koneksi (mysqli)
+    } else {
+        // fallback manual (ubah credential jika perlu)
+        $koneksi = mysqli_connect("localhost", "root", "", "pmlauwba");
+        if (!$koneksi) die("Koneksi database gagal: " . mysqli_connect_error());
     }
 }
 
-// 5. Panggil Sidebar
-include '../../component/sidebar.php';
+// Inisialisasi variabel aman
+$judul_halaman = "Laporan Presensi Keseluruhan";
+$role_user     = $_SESSION['role'] ?? 'guest';
+
+// Ambil data presensi jika controller belum mengisi $daftar_presensi
+if (!isset($daftar_presensi) || !is_array($daftar_presensi)) {
+    $query = "SELECT p.*, u.nama_lengkap 
+              FROM presensi p 
+              JOIN users u ON p.id_user = u.id_user 
+              ORDER BY p.tanggal DESC, p.waktu_masuk DESC";
+    $result = mysqli_query($koneksi, $query);
+    $daftar_presensi = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) $daftar_presensi[] = $row;
+    }
+}
+
+// Include header & sidebar via absolute path
+if (file_exists($headerFile)) include $headerFile;
+else {
+    echo "<!doctype html><html><head><meta charset='utf-8'><title>" . htmlspecialchars($judul_halaman) . "</title></head><body>";
+}
+
+if (file_exists($navbarFile)) include $navbarFile;
+if (file_exists($sidebarFile)) include $sidebarFile;
 ?>
 
 <div class="main-panel">
     <div class="container">
         <div class="page-inner">
-            
+
             <div class="page-header">
-                <h4 class="page-title"><?= $judul_halaman ?></h4>
+                <h4 class="page-title"><?= htmlspecialchars($judul_halaman) ?></h4>
                 <ul class="breadcrumbs">
-                    <li class="nav-home">
-                        <a href="?url=dashboard"><i class="icon-home"></i></a>
-                    </li>
+                    <li class="nav-home"><a href="?url=dashboard_backend"><i class="icon-home"></i></a></li>
                     <li class="separator"><i class="icon-arrow-right"></i></li>
                     <li class="nav-item"><a href="#">Laporan</a></li>
                 </ul>
             </div>
 
-            <?php if (isset($_GET['error'])): ?>
+            <?php if (!empty($_GET['error'])): ?>
                 <div class="alert alert-danger" role="alert"><?= htmlspecialchars($_GET['error']) ?></div>
             <?php endif; ?>
 
-            <?php if (isset($_GET['success'])): ?>
+            <?php if (!empty($_GET['success'])): ?>
                 <div class="alert alert-success" role="alert"><?= htmlspecialchars($_GET['success']) ?></div>
             <?php endif; ?>
 
@@ -70,7 +90,7 @@ include '../../component/sidebar.php';
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table id="basic-datatables" class="display table table-striped table-hover">
@@ -88,52 +108,42 @@ include '../../component/sidebar.php';
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if (!empty($daftar_presensi)): ?>
-                                            <?php $no = 1; foreach ($daftar_presensi as $presensi): ?>
-                                            <tr>
-                                                <td><?= $no++ ?></td>
-                                                <td>
-                                                    <span class="fw-bold"><?= htmlspecialchars($presensi['nama_lengkap']) ?></span>
-                                                </td>
-                                                <td><?= htmlspecialchars(date('d M Y', strtotime($presensi['tanggal']))) ?></td>
-                                                <td>
-                                                    <?= $presensi['waktu_masuk'] ? htmlspecialchars(date('H:i', strtotime($presensi['waktu_masuk']))) : '<span class="text-muted">-</span>' ?>
-                                                </td>
-                                                <td>
-                                                    <?= $presensi['waktu_keluar'] ? htmlspecialchars(date('H:i', strtotime($presensi['waktu_keluar']))) : '<span class="text-muted">-</span>' ?>
-                                                </td>
-                                                <td>
-                                                    <?php 
-                                                    $status = $presensi['status_presensi'];
-                                                    $badge_class = 'badge-secondary';
-                                                    
-                                                    if ($status == 'hadir') {
-                                                        $badge_class = 'badge-success';
-                                                    } elseif ($status == 'izin') {
-                                                        $badge_class = 'badge-warning';
-                                                    } elseif ($status == 'sakit' || $status == 'alpha') {
-                                                        $badge_class = 'badge-danger';
-                                                    }
-                                                    ?>
-                                                    <span class="badge <?= $badge_class ?>">
-                                                        <?= ucfirst($status) ?>
-                                                    </span>
-                                                </td>
-                                                
-                                                <?php if (in_array($role_user, ['superuser', 'admin'])): ?>
-                                                <td>
-                                                    <div class="form-button-action">
-                                                        <a href="?url=hapus_presensi&id=<?= $presensi['id_presensi'] ?>" 
-                                                           class="btn btn-link btn-danger" 
-                                                           data-bs-toggle="tooltip" title="Hapus Data"
-                                                           onclick="return confirm('Anda yakin ingin menghapus catatan presensi ini?');">
-                                                            <i class="fa fa-times"></i>
-                                                        </a>
-                                                    </div>
-                                                </td>
-                                                <?php endif; ?>
-                                            </tr>
+                                        <?php if (!empty($daftar_presensi)): $no = 1; ?>
+                                            <?php foreach ($daftar_presensi as $presensi): ?>
+                                                <tr>
+                                                    <td><?= $no++ ?></td>
+                                                    <td><span class="fw-bold"><?= htmlspecialchars($presensi['nama_lengkap'] ?? '-') ?></span></td>
+                                                    <td><?= htmlspecialchars(date('d M Y', strtotime($presensi['tanggal'] ?? 'now'))) ?></td>
+                                                    <td>
+                                                        <?= !empty($presensi['waktu_masuk']) ? htmlspecialchars(date('H:i', strtotime($presensi['waktu_masuk']))) : '<span class="text-muted">-</span>' ?>
+                                                    </td>
+                                                    <td>
+                                                        <?= !empty($presensi['waktu_keluar']) ? htmlspecialchars(date('H:i', strtotime($presensi['waktu_keluar']))) : '<span class="text-muted">-</span>' ?>
+                                                    </td>
+                                                    <td>
+                                                        <?php 
+                                                        $status = $presensi['status_presensi'] ?? 'hadir';
+                                                        $badge_class = 'badge-secondary';
+                                                        if ($status === 'hadir') $badge_class = 'badge-success';
+                                                        elseif ($status === 'izin') $badge_class = 'badge-warning';
+                                                        elseif ($status === 'sakit' || $status === 'alpha') $badge_class = 'badge-danger';
+                                                        ?>
+                                                        <span class="badge <?= $badge_class ?>"><?= ucfirst(htmlspecialchars($status)) ?></span>
+                                                    </td>
+
+                                                    <?php if (in_array($role_user, ['superuser', 'admin'])): ?>
+                                                    <td>
+                                                        <div class="form-button-action">
+                                                            <a href="?url=hapus_presensi&id=<?= intval($presensi['id_presensi'] ?? 0) ?>" class="btn btn-link btn-danger" onclick="return confirm('Anda yakin ingin menghapus catatan presensi ini?');" title="Hapus Data">
+                                                                <i class="fa fa-times"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                    <?php endif; ?>
+                                                </tr>
                                             <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr><td colspan="<?= in_array($role_user,['superuser','admin']) ? 7 : 6 ?>" class="text-center text-muted">Belum ada data presensi.</td></tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
@@ -142,30 +152,31 @@ include '../../component/sidebar.php';
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-    
-    <?php include '../../component/footer.php'; ?>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+    <?php
+    if (file_exists($footerFile)) include $footerFile;
+    else echo "</body></html>";
+    ?>
 
-    <script>
-        $(document).ready(function() {
-            $('#basic-datatables').DataTable({
-                "pageLength": 10,
-                "order": [], // Default sort dimatikan agar ikut urutan SQL
-                "language": {
-                    "sSearch": "Cari Data:",
-                    "sEmptyTable": "Belum ada data presensi",
-                    "sInfo": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    "oPaginate": {
-                        "sNext": "Berikutnya",
-                        "sPrevious": "Sebelumnya"
-                    }
-                }
-            });
-        });
-    </script>
 </div>
+
+<!-- scripts -->
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function(){
+        $('#basic-datatables').DataTable({
+            "pageLength": 10,
+            "order": [],
+            "language": {
+                "search": "Cari Data:",
+                "emptyTable": "Belum ada data presensi",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                "paginate": {"previous":"Sebelumnya","next":"Berikutnya"}
+            }
+        });
+    });
+</script>

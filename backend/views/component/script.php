@@ -15,4 +15,4 @@
 <script src="<?= $assets ?>/assets/js/plugin/sweetalert/sweetalert.min.js"></script>
 
 <script src="<?= $assets ?>/assets/js/kaiadmin.min.js"></script>
-<script src="<?= $assets ?>/assets/js/demo.js"></script>
+<!-- <script src="<?= $assets ?>/assets/js/demo.js"></script> -->

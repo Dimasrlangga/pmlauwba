@@ -20,7 +20,7 @@
             <a href="https://www.instagram.com/dimasrlangga?igsh=MTN2OHB4MGJ4eTNyMg==">Dimas Erlangga</a>
         </div>
         <div>
-           LauwbaLog
+           PMLauwba
         </div>
     </div>
 </footer>

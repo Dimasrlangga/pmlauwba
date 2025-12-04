@@ -1,8 +1,29 @@
 <?php
-// Lokasi: backend/views/presensi/presensi.php
-// Versi yang disesuaikan: hanya ubah action form ke route backend
+// File: backend/views/pages/presensi/presensi.php
+// Versi yang sudah diperbaiki: includes absolut, fallback variabel, safe output
 
-// safety defaults
+// Pastikan APP_ROOT tersedia (biasanya didefinisikan di root index.php)
+if (!defined('APP_ROOT')) {
+    // Coba cari 3 level ke atas dari lokasi file ini
+    $maybeRoot = realpath(__DIR__ . '/../../../../');
+    if ($maybeRoot) define('APP_ROOT', $maybeRoot);
+    else define('APP_ROOT', __DIR__); // fallback (tetap bekerja tapi relatif)
+}
+
+// Pastikan session aktif
+if (!session_id()) session_start();
+
+// Fallback untuk assets/path jika ada file path.php di component
+$componentPath = APP_ROOT . '/backend/views/component';
+$pathFile = $componentPath . '/path.php';
+if (file_exists($pathFile)) {
+    include_once $pathFile; // harus mendefinisikan $assets minimal
+} else {
+    // fallback assets (ubah sesuai struktur jika perlu)
+    $assets = $assets ?? '/backend/views/component';
+}
+
+// Safety defaults untuk variabel yang dikirim controller
 $sudah_masuk  = $sudah_masuk  ?? false;
 $sudah_keluar = $sudah_keluar ?? false;
 $waktu_masuk  = $waktu_masuk  ?? null;
@@ -10,12 +31,18 @@ $id_presensi  = $id_presensi  ?? null;
 
 $judul_halaman = "Presensi Harian";
 
-// include header/sidebar/footer (relatif seperti strukturmu)
-include '../../component/header.php';
-include '../../component/sidebar.php';
+// Include header / sidebar memakai path absolut supaya tidak error
+$headerFile = APP_ROOT . '/backend/views/component/header.php';
+$sidebarFile = APP_ROOT . '/backend/views/component/sidebar.php';
+$footerFile = APP_ROOT . '/backend/views/component/footer.php';
 
-// timezone
-date_default_timezone_set('Asia/Jakarta');
+if (file_exists($headerFile)) include $headerFile;
+else {
+    // Minimal fallback: head tag supaya halaman tetap valid
+    echo "<!doctype html><html><head><meta charset='utf-8'><title>" . htmlspecialchars($judul_halaman) . "</title></head><body>";
+}
+
+if (file_exists($sidebarFile)) include $sidebarFile;
 ?>
 
 <style>
@@ -69,7 +96,7 @@ date_default_timezone_set('Asia/Jakarta');
     <div class="container">
         <div class="page-inner">
             <div class="page-header">
-                <h4 class="page-title"><?= $judul_halaman ?></h4>
+                <h4 class="page-title"><?= htmlspecialchars($judul_halaman) ?></h4>
                 <ul class="breadcrumbs">
                     <li class="nav-home">
                         <a href="?url=dashboard_backend">
@@ -91,7 +118,7 @@ date_default_timezone_set('Asia/Jakarta');
 
                         <div class="card-body text-center">
                             <div id="jam-digital" class="jam-digital">--:--:--</div>
-                            <div class="tanggal-digital"><?= date('d F Y') ?></div>
+                            <div class="tanggal-digital"><?= htmlspecialchars(date('d F Y')) ?></div>
 
                             <?php if (!empty($_GET['error'])): ?>
                                 <div class="alert alert-danger" role="alert"><?= htmlspecialchars($_GET['error']) ?></div>
@@ -117,13 +144,18 @@ date_default_timezone_set('Asia/Jakarta');
                                 $waktu_masuk_safe = $waktu_masuk ?? date('Y-m-d H:i:s');
                                 ?>
 
-                                <form action="?url=proses_presensi_keluar_backend" method="POST">
-                                    <!-- cast to int for safety, then htmlspecialchars on string form of it -->
-                                    <input type="hidden" name="id_presensi" value="<?= htmlspecialchars((string)$id_presensi_int) ?>">
-                                    <button type="submit" class="btn btn-danger btn-presensi">
-                                        <i class="fa fa-sign-out-alt"></i> PRESENSI KELUAR
-                                    </button>
-                                </form>
+                                <?php if ($id_presensi_int > 0): ?>
+                                    <form action="?url=proses_presensi_keluar_backend" method="POST">
+                                        <input type="hidden" name="id_presensi" value="<?= htmlspecialchars((string)$id_presensi_int) ?>">
+                                        <button type="submit" class="btn btn-danger btn-presensi">
+                                            <i class="fa fa-sign-out-alt"></i> PRESENSI KELUAR
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <div class="alert alert-warning">
+                                        Presensi masuk tercatat, namun ID presensi tidak valid. Silakan refresh halaman atau hubungi admin.
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="mt-3 text-muted">
                                     Anda masuk pukul:
@@ -132,8 +164,15 @@ date_default_timezone_set('Asia/Jakarta');
                                     </strong>
                                 </div>
 
-                            <?php endif; ?>
+                            <?php else: ?>
 
+                                <form action="?url=proses_presensi_masuk_backend" method="POST">
+                                    <button type="submit" class="btn btn-success btn-presensi">
+                                        <i class="fa fa-fingerprint"></i> PRESENSI MASUK
+                                    </button>
+                                </form>
+
+                            <?php endif; ?>
 
                         </div>
                     </div>
@@ -143,7 +182,14 @@ date_default_timezone_set('Asia/Jakarta');
         </div>
     </div>
 
-    <?php include '../../component/footer.php'; ?>
+    <?php
+    // include footer jika ada, kalau tidak close body/html agar page valid
+    if (file_exists($footerFile)) {
+        include $footerFile;
+    } else {
+        echo "</div></body></html>";
+    }
+    ?>
 </div>
 
 <script>

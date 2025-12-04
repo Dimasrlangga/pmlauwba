@@ -42,8 +42,8 @@
 
     <div class="card login-card">
         <div class="card-header">
-            <h4><i class="fas fa-user-shield me-2"></i>LauwbaLog Backend</h4>
-            <small>Login Administrator</small>
+            <h4><i class="fas fa-user-shield me-2"></i>PMLauwba Backend</h4>
+            <small>Silahkan Login</small>
         </div>
         <div class="card-body p-4">
             
