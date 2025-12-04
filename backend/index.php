@@ -21,9 +21,11 @@ if (!isset($_SESSION['logged_in']) && $page !== 'login' && $page !== 'auth_proce
 // 5. Load Controllers
 require_once 'controllers/SuperuserController.php';
 require_once 'controllers/AuthController.php';
+require_once 'controllers/LogHarianController.php'; // TAMBAHAN: Controller Log Harian
 
 $authController = new AuthController($koneksi);
 $superuserController = new SuperuserController($koneksi);
+$logHarianController = new LogHarianController($koneksi); // TAMBAHAN: Inisialisasi
 
 // ==========================================
 // FUNGSI BANTUAN (HELPER)
@@ -79,7 +81,7 @@ switch ($page) {
         $authController->logout();
         exit;
 
-        // --- SUPERUSER ---
+    // --- SUPERUSER ---
     case 'kelola_user':
         $superuserController->kelolaUser();
         exit;
@@ -99,13 +101,25 @@ switch ($page) {
         $superuserController->prosesHapusUser();
         exit;
 
-        // --- FEATURES ---
+    // --- FEATURES ---
     case 'presensi':
         require_once 'views/pages/presensi/presensi.php';
         exit;
+    
+    // *** TAMBAHAN: LOG HARIAN ***
     case 'log_harian':
-        require_once 'views/pages/log_harian/log_harian.php';
+        $logHarianController->index();
         exit;
+    
+    case 'proses_simpan_log':
+        $logHarianController->prosesSimpan();
+        exit;
+    
+    case 'proses_hapus_log':
+        $logHarianController->prosesHapus();
+        exit;
+    // *** AKHIR TAMBAHAN ***
+    
     case 'kelola_izin':
         require_once 'views/pages/kelola_izin/kelola_izin.php';
         exit;
@@ -113,7 +127,7 @@ switch ($page) {
         require_once 'views/pages/laporan_presensi/laporan_presensi.php';
         exit;
 
-        // --- DASHBOARD (View Logic) ---
+    // --- DASHBOARD (View Logic) ---
     case 'dashboard_backend':
         // 1. Data Peserta
         $peserta_count = 0;
@@ -881,9 +895,9 @@ switch ($page) {
                         </div>
                     </div>
                 </div>
-                <div class="custom-toggle">
+                <!-- <div class="custom-toggle">
                     <i class="icon-settings"></i>
-                </div>
+                </div> -->
             </div>
             <!-- End Custom template -->
         </div>

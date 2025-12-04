@@ -1,13 +1,6 @@
 <?php
 // File: backend/views/pages/log_harian/log_harian.php
-// Versi diperbaiki: include absolut, fallback koneksi, safe output
-
-// Pastikan APP_ROOT didefinisikan (biasanya di index.php root)
-if (!defined('APP_ROOT')) {
-    $maybeRoot = realpath(__DIR__ . '/../../../../');
-    if ($maybeRoot) define('APP_ROOT', $maybeRoot);
-    else define('APP_ROOT', __DIR__); // fallback
-}
+// Versi bersih: tidak ada query database, data sudah disiapkan controller
 
 // Pastikan session aktif
 if (!session_id()) session_start();
@@ -19,48 +12,14 @@ $navbarFile    = $componentDir . '/navbar.php';
 $sidebarFile   = $componentDir . '/sidebar.php';
 $footerFile    = $componentDir . '/footer.php';
 
-// Koneksi database: gunakan $koneksi yang mungkin dikirim controller, kalau belum ada - load database.php
-if (!isset($koneksi) || !($koneksi instanceof mysqli)) {
-    $dbFile = APP_ROOT . '/database.php';
-    if (file_exists($dbFile)) {
-        include_once $dbFile; // file diharapkan mendefinisikan $koneksi (mysqli)
-    } else {
-        // fallback manual (ubah credential sesuai environment)
-        $koneksi = mysqli_connect("localhost", "root", "", "pmlauwba");
-        if (!$koneksi) {
-            die("Koneksi database gagal: " . mysqli_connect_error());
-        }
-    }
-}
-
-// Inisialisasi variabel aman
-$judul_halaman = "Laporan Log Aktivitas";
+// Inisialisasi variabel aman (data sudah dikirim dari controller)
+$judul_halaman = $judul_halaman ?? "Laporan Log Aktivitas";
 $role_user     = $_SESSION['role'] ?? 'guest';
 $id_user_login = intval($_SESSION['id_user'] ?? 0);
-$log_edit      = null;
+$log_edit      = $log_edit ?? null;
+$daftar_log    = $daftar_log ?? [];
 
-// Ambil semua log (JOIN users untuk nama)
-$query = "SELECT l.*, u.nama_lengkap 
-          FROM log_harian l 
-          JOIN users u ON l.id_user = u.id_user 
-          ORDER BY l.tanggal DESC, l.created_at DESC";
-$result = mysqli_query($koneksi, $query);
-$daftar_log = [];
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $daftar_log[] = $row;
-    }
-}
-
-// Jika mode edit (via ?action=edit&id=...)
-if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
-    $id_edit = intval($_GET['id']);
-    $q_edit = "SELECT l.*, u.nama_lengkap FROM log_harian l JOIN users u ON l.id_user = u.id_user WHERE id_log = " . $id_edit . " LIMIT 1";
-    $r_edit = mysqli_query($koneksi, $q_edit);
-    if ($r_edit) $log_edit = mysqli_fetch_assoc($r_edit);
-}
-
-// Include header & sidebar via APP_ROOT (jangan include relatif)
+// Include header & sidebar
 if (file_exists($headerFile)) include $headerFile;
 else {
     echo "<!doctype html><html><head><meta charset='utf-8'><title>" . htmlspecialchars($judul_halaman) . "</title></head><body>";
@@ -203,8 +162,6 @@ if (file_exists($footerFile)) {
 }
 ?>
 </div> <!-- main-panel -->
-
-
 
 <!-- datatables scripts -->
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
