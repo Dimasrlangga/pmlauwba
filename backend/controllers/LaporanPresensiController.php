@@ -36,7 +36,7 @@ class LaporanPresensiController
         $daftar_presensi = $this->presensiModel->getAll();
 
         // PERBAIKAN 3: Path View ke backend/views/
-        include APP_ROOT . '/backend/views/laporan_presensi.php';
+        include APP_ROOT . '/backend/views/pages/laporan_presensi/laporan_presensi.php';
     }
 
     /**

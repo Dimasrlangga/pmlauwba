@@ -21,13 +21,15 @@ if (!isset($_SESSION['logged_in']) && $page !== 'login' && $page !== 'auth_proce
 // 5. Load Controllers
 require_once 'controllers/SuperuserController.php';
 require_once 'controllers/AuthController.php';
-require_once 'controllers/LogHarianController.php'; // TAMBAHAN: Controller Log Harian
+require_once 'controllers/LogHarianController.php';
 require_once 'controllers/LaporanPresensiController.php';
+require_once 'controllers/IzinSakitController.php'; // TAMBAHAN: Controller Izin
 
 $authController = new AuthController($koneksi);
 $superuserController = new SuperuserController($koneksi);
-$logHarianController = new LogHarianController($koneksi); // TAMBAHAN: Inisialisasi
+$logHarianController = new LogHarianController($koneksi);
 $laporanPresensiController = new LaporanPresensiController($koneksi);
+$izinSakitController = new IzinSakitController($koneksi); // TAMBAHAN: Inisialisasi
 
 // ==========================================
 // FUNGSI BANTUAN (HELPER)
@@ -55,7 +57,7 @@ if (!function_exists('get_presensi_count')) {
     function get_presensi_count($koneksi, $status = null)
     {
         if (!($koneksi instanceof mysqli)) return 0;
-        $date = date('Y-m-d'); // Gunakan format tanggal aman
+        $date = date('Y-m-d');
         if ($status === null) {
             $sql = "SELECT COUNT(*) AS cnt FROM presensi WHERE tanggal = '$date'";
         } else {
@@ -103,12 +105,12 @@ switch ($page) {
         $superuserController->prosesHapusUser();
         exit;
 
-    // --- FEATURES ---
+    // --- PRESENSI ---
     case 'presensi':
         require_once 'views/pages/presensi/presensi.php';
         exit;
     
-    // *** TAMBAHAN: LOG HARIAN ***
+    // --- LOG HARIAN ---
     case 'log_harian':
         $logHarianController->index();
         exit;
@@ -120,16 +122,25 @@ switch ($page) {
     case 'proses_hapus_log':
         $logHarianController->prosesHapus();
         exit;
-    // *** AKHIR TAMBAHAN ***
     
+    // *** TAMBAHAN: KELOLA IZIN & SAKIT ***
     case 'kelola_izin':
-        require_once 'views/pages/kelola_izin/kelola_izin.php';
+        // Menampilkan halaman kelola izin (Read All)
+        $izinSakitController->index();
         exit;
-    case 'laporan_presensi':
-        require_once 'views/pages/laporan_presensi/laporan_presensi.php';
+    
+    case 'proses_approval_izin':
+        // Proses setujui/tolak pengajuan izin
+        $izinSakitController->prosesApproval();
         exit;
-
-        // --- LAPORAN PRESENSI ---
+    
+    case 'hapus_izin':
+        // Proses hapus data izin (hanya superuser)
+        $izinSakitController->prosesHapus();
+        exit;
+    // *** AKHIR TAMBAHAN KELOLA IZIN ***
+    
+    // --- LAPORAN PRESENSI ---
     case 'laporan_presensi':
         // Tampilkan halaman laporan presensi via controller
         $laporanPresensiController->index();
@@ -156,7 +167,6 @@ switch ($page) {
         $laporanPresensiController->prosesHapus();
         exit;
 
-
     // --- DASHBOARD (View Logic) ---
     case 'dashboard_backend':
         // 1. Data Peserta
@@ -173,7 +183,7 @@ switch ($page) {
         $cnt_hadir = get_presensi_count($koneksi, 'hadir');
         $cnt_izin  = get_presensi_count($koneksi, 'izin');
         $cnt_sakit = get_presensi_count($koneksi, 'sakit');
-        $cnt_total = get_presensi_count($koneksi, null); // Total aktivitas hari ini
+        $cnt_total = get_presensi_count($koneksi, null);
 
         // 4. Data Chart (Tahunan)
         $chart_peserta  = getMonthlyStats($koneksi, "users", "created_at", "AND role='peserta'");
