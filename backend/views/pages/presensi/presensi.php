@@ -33,6 +33,7 @@ $judul_halaman = "Presensi Harian";
 
 // Include header / sidebar memakai path absolut supaya tidak error
 $headerFile = APP_ROOT . '/backend/views/component/header.php';
+$navbarFile = APP_ROOT . '/backend/views/component/navbar.php';
 $sidebarFile = APP_ROOT . '/backend/views/component/sidebar.php';
 $footerFile = APP_ROOT . '/backend/views/component/footer.php';
 
@@ -42,6 +43,10 @@ else {
     echo "<!doctype html><html><head><meta charset='utf-8'><title>" . htmlspecialchars($judul_halaman) . "</title></head><body>";
 }
 
+if (file_exists($navbarFile)) include $navbarFile;
+else {
+    echo "<!-- navbar not found: {$navbarFile} -->";
+}
 if (file_exists($sidebarFile)) include $sidebarFile;
 ?>
 

@@ -1,3 +1,12 @@
+<!-- footer.php akhir -->
+<?php
+// include script assets (Bootstrap bundle + plugin)
+$scriptFile = __DIR__ . '/script.php';
+if (file_exists($scriptFile)) include $scriptFile;
+?>
+</body>
+</html>
+
 <footer class="footer">
     <div class="container-fluid d-flex justify-content-between">
         <nav class="pull-left">

@@ -23,9 +23,14 @@ class PresensiController {
      * Menampilkan halaman Presensi (backend)
      */
     public function index() {
+        // Pastikan session sudah dimulai
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         // Keamanan: Cek apakah user sudah login (backend)
-        if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], ['superuser', 'admin'])) {
-            header("Location: /pmlauwba/?url=login&error=" . urlencode("Akses ditolak"));
+        if (!isset($_SESSION['logged_in']) || !in_array($_SESSION['role'], ['superuser', 'admin', 'peserta'])) {
+            header("Location: ?url=login&error=" . urlencode("Akses ditolak"));
             exit;
         }
 
@@ -50,8 +55,8 @@ class PresensiController {
             }
         }
 
-        // Path view backend
-        $view = APP_ROOT . '/backend/views/presensi.php';
+        // Path view backend - PERBAIKAN: gunakan path yang benar
+        $view = APP_ROOT . '/backend/views/pages/presensi/presensi.php';
         if (file_exists($view)) {
             include $view;
         } else {
@@ -61,11 +66,17 @@ class PresensiController {
 
     /**
      * Memproses Presensi Masuk (dipanggil dari form)
-     * Route yang disarankan: /pmlauwba/?url=proses_presensi_masuk_backend
+     * Route yang disarankan: ?url=proses_presensi_masuk_backend
      */
     public function prosesMasuk() {
+        // Pastikan session sudah dimulai
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         if (!isset($_SESSION['logged_in'])) {
-            header("Location: /pmlauwba/?url=login"); exit;
+            header("Location: ?url=login"); 
+            exit;
         }
 
         $id_user = $_SESSION['id_user'];
@@ -73,31 +84,43 @@ class PresensiController {
         $cek = $this->presensiModel->checkPresensiHariIni($id_user);
         if (!$cek) {
             $ok = $this->presensiModel->presensiMasuk($id_user);
-            if ($ok) header("Location: /pmlauwba/?url=presensi_backend&success=" . urlencode("Presensi masuk berhasil dicatat."));
-            else header("Location: /pmlauwba/?url=presensi_backend&error=" . urlencode("Gagal menyimpan presensi masuk."));
+            if ($ok) {
+                header("Location: ?url=presensi_backend&success=" . urlencode("Presensi masuk berhasil dicatat."));
+            } else {
+                header("Location: ?url=presensi_backend&error=" . urlencode("Gagal menyimpan presensi masuk."));
+            }
         } else {
-            header("Location: /pmlauwba/?url=presensi_backend&error=" . urlencode("Anda sudah melakukan presensi masuk hari ini."));
+            header("Location: ?url=presensi_backend&error=" . urlencode("Anda sudah melakukan presensi masuk hari ini."));
         }
         exit;
     }
 
     /**
      * Memproses Presensi Keluar
-     * Route: /pmlauwba/?url=proses_presensi_keluar_backend
+     * Route: ?url=proses_presensi_keluar_backend
      */
     public function prosesKeluar() {
+        // Pastikan session sudah dimulai
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         if (!isset($_SESSION['logged_in'])) {
-            header("Location: /pmlauwba/?url=login"); exit;
+            header("Location: ?url=login"); 
+            exit;
         }
 
         $id_presensi = isset($_POST['id_presensi']) ? intval($_POST['id_presensi']) : 0;
         
         if ($id_presensi > 0) {
             $ok = $this->presensiModel->presensiKeluar($id_presensi);
-            if ($ok) header("Location: /pmlauwba/?url=presensi_backend&success=" . urlencode("Presensi keluar berhasil dicatat."));
-            else header("Location: /pmlauwba/?url=presensi_backend&error=" . urlencode("Gagal menyimpan presensi keluar."));
+            if ($ok) {
+                header("Location: ?url=presensi_backend&success=" . urlencode("Presensi keluar berhasil dicatat."));
+            } else {
+                header("Location: ?url=presensi_backend&error=" . urlencode("Gagal menyimpan presensi keluar."));
+            }
         } else {
-            header("Location: /pmlauwba/?url=presensi_backend&error=" . urlencode("Terjadi kesalahan (ID presensi tidak valid)."));
+            header("Location: ?url=presensi_backend&error=" . urlencode("Terjadi kesalahan (ID presensi tidak valid)."));
         }
         exit;
     }

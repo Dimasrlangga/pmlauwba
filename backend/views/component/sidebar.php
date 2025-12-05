@@ -94,7 +94,7 @@ function is_active($currentPage, $names)
                 <?php if (in_array($role, ['superuser', 'admin'])): ?>
 
                     <li class="nav-item <?= is_active($currentPage, 'presensi') ? 'active' : '' ?>">
-                        <a href="?page=presensi">
+                            <a href="?url=presensi_backend">
                             <i class="fas fa-fingerprint"></i>
                             <p>Input Presensi</p>
                         </a>

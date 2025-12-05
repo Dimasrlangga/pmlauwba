@@ -10,7 +10,7 @@
                             <p class="text-muted">Silakan login untuk melanjutkan</p>
                         </div>
 
-                        <!-- Menampilkan Pesan Error (Logika Lama) -->
+                        <!-- Menampilkan Pesan Error -->
                         <?php if (isset($_GET['error'])): ?>
                             <div class="alert alert-danger text-center mb-4 fade show" role="alert">
                                 <i class="fa fa-exclamation-circle me-2"></i>
@@ -26,19 +26,30 @@
                             </div>
                         <?php endif; ?>
 
-                        <!-- Form Login -->
-                        <!-- Action diarahkan ke ?page=proses_login sesuai routing baru -->
-                        <form action="?page=proses_login" method="POST">
+                        <!-- Form Login Frontend -->
+                        <!-- PENTING: Action ke index.php?page=proses_login (frontend) -->
+                        <form action="index.php?page=proses_login" method="POST">
                             
                             <!-- Input Username -->
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="username" 
+                                       name="username" 
+                                       placeholder="Username" 
+                                       required 
+                                       autofocus>
                                 <label for="username">Username</label>
                             </div>
 
                             <!-- Input Password -->
                             <div class="form-floating mb-4">
-                                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="password" 
+                                       name="password" 
+                                       placeholder="Password" 
+                                       required>
                                 <label for="password">Password</label>
                             </div>
 
@@ -50,10 +61,18 @@
                             </div>
 
                         </form>
+
+                        <!-- Link ke Backend -->
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <p class="text-muted mb-2">Staff / Admin?</p>
+                            <a href="backend/index.php?page=login" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-user-shield me-1"></i> Login Backend
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Link Kembali (Opsional) -->
+                <!-- Link Kembali -->
                 <div class="text-center mt-4">
                     <a href="index.php" class="text-decoration-none text-muted">
                         <i class="fa fa-arrow-left me-1"></i> Kembali ke Beranda

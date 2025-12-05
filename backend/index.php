@@ -23,13 +23,15 @@ require_once 'controllers/SuperuserController.php';
 require_once 'controllers/AuthController.php';
 require_once 'controllers/LogHarianController.php';
 require_once 'controllers/LaporanPresensiController.php';
-require_once 'controllers/IzinSakitController.php'; // TAMBAHAN: Controller Izin
+require_once 'controllers/IzinSakitController.php';
+require_once 'controllers/PresensiController.php'; // TAMBAHAN: Controller Presensi
 
 $authController = new AuthController($koneksi);
 $superuserController = new SuperuserController($koneksi);
 $logHarianController = new LogHarianController($koneksi);
 $laporanPresensiController = new LaporanPresensiController($koneksi);
-$izinSakitController = new IzinSakitController($koneksi); // TAMBAHAN: Inisialisasi
+$izinSakitController = new IzinSakitController($koneksi);
+$presensiController = new PresensiController($koneksi); // TAMBAHAN: Inisialisasi
 
 // ==========================================
 // FUNGSI BANTUAN (HELPER)
@@ -105,9 +107,20 @@ switch ($page) {
         $superuserController->prosesHapusUser();
         exit;
 
-    // --- PRESENSI ---
-    case 'presensi':
-        require_once 'views/pages/presensi/presensi.php';
+    // --- PRESENSI (TAMBAHAN ROUTING BARU) ---
+    case 'presensi_backend':
+        // Menampilkan halaman presensi
+        $presensiController->index();
+        exit;
+    
+    case 'proses_presensi_masuk_backend':
+        // Proses presensi masuk
+        $presensiController->prosesMasuk();
+        exit;
+    
+    case 'proses_presensi_keluar_backend':
+        // Proses presensi keluar
+        $presensiController->prosesKeluar();
         exit;
     
     // --- LOG HARIAN ---
@@ -123,47 +136,37 @@ switch ($page) {
         $logHarianController->prosesHapus();
         exit;
     
-    // *** TAMBAHAN: KELOLA IZIN & SAKIT ***
+    // --- KELOLA IZIN & SAKIT ---
     case 'kelola_izin':
-        // Menampilkan halaman kelola izin (Read All)
         $izinSakitController->index();
         exit;
     
     case 'proses_approval_izin':
-        // Proses setujui/tolak pengajuan izin
         $izinSakitController->prosesApproval();
         exit;
     
     case 'hapus_izin':
-        // Proses hapus data izin (hanya superuser)
         $izinSakitController->prosesHapus();
         exit;
-    // *** AKHIR TAMBAHAN KELOLA IZIN ***
     
     // --- LAPORAN PRESENSI ---
     case 'laporan_presensi':
-        // Tampilkan halaman laporan presensi via controller
         $laporanPresensiController->index();
         exit;
 
     case 'edit_presensi':
-        // Menampilkan form edit (GET), pastikan hanya admin/superuser
         $laporanPresensiController->showEditForm();
         exit;
 
     case 'proses_edit_presensi':
-        // Proses update presensi (POST)
         $laporanPresensiController->prosesEdit();
         exit;
 
     case 'proses_hapus_presensi':
-        // Proses hapus presensi (POST) — direkomendasikan
         $laporanPresensiController->prosesHapus();
         exit;
 
-    // Opsional: dukung juga route GET lama (jaga kompatibilitas)
     case 'hapus_presensi':
-        // Jika Anda masih menggunakan link GET (tidak direkomendasikan), ini akan memanggil hapus
         $laporanPresensiController->prosesHapus();
         exit;
 
@@ -190,8 +193,33 @@ switch ($page) {
         $chart_log      = getMonthlyStats($koneksi, "log_harian", "tanggal");
         $chart_presensi = getMonthlyStats($koneksi, "presensi", "tanggal", "AND status_presensi='hadir'");
 
-        // Lanjut ke HTML di bawah...
-        break;
+        // Cek lokasi file dashboard yang ada
+        $dashboard_paths = [
+            'views/dashboard.php',
+            'views/pages/dashboard.php',
+            APP_ROOT . '/backend/views/dashboard.php',
+            APP_ROOT . '/backend/views/pages/dashboard.php'
+        ];
+        
+        $dashboard_found = false;
+        foreach ($dashboard_paths as $path) {
+            if (file_exists($path)) {
+                require_once $path;
+                $dashboard_found = true;
+                break;
+            }
+        }
+        
+        if (!$dashboard_found) {
+            echo "<h1>Dashboard</h1>";
+            echo "<p>File dashboard.php tidak ditemukan. Silakan buat file di salah satu lokasi:</p>";
+            echo "<ul>";
+            foreach ($dashboard_paths as $path) {
+                echo "<li>" . htmlspecialchars($path) . "</li>";
+            }
+            echo "</ul>";
+        }
+        exit;
 
     default:
         echo "<script>alert('Halaman tidak ditemukan'); window.location='?page=dashboard_backend';</script>";
