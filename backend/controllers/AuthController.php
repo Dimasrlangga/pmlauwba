@@ -45,35 +45,47 @@ class AuthController
     }
 
     public function processLogin()
-    {
-        $username = $_POST['username'] ?? '';
-        $password = $_POST['password'] ?? '';
-
-        $user = $this->userModel->findByUsername($username);
-
-        if ($user && password_verify($password, $user['password'])) {
-
-            // Cek apakah user punya hak akses backend
-            if (!in_array($user['role'], ['superuser', 'admin', 'manager'])) {
-                header("Location: ?page=login&error=Anda tidak memiliki akses ke halaman ini");
-                exit;
-            }
-
-            // --- LOGIN BERHASIL ---
-            $_SESSION['id_user'] = $user['id_user'];
-            $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
-            $_SESSION['role'] = $user['role'];
-            $_SESSION['logged_in'] = true;
-
-            // Redirect ke Dashboard Backend
-            header("Location: ?page=dashboard_backend");
-            exit;
-        } else {
-            // --- LOGIN GAGAL ---
-            header("Location: ?page=login&error=Username atau password salah");
-            exit;
-        }
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header("Location: ?page=login");
+        exit;
     }
+
+    $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+
+    if ($username === '' || $password === '') {
+        header("Location: ?page=login&error=Username dan password wajib diisi");
+        exit;
+    }
+
+    $user = $this->userModel->findByUsername($username);
+
+    if (!$user || !password_verify($password, $user['password'])) {
+        header("Location: ?page=login&error=Username atau password salah");
+        exit;
+    }
+
+    // ===============================
+    // LOGIN BERHASIL
+    // ===============================
+    $_SESSION['logged_in'] = true;
+    $_SESSION['id_user'] = $user['id_user'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
+    $_SESSION['role'] = $user['role'];
+
+    // ===============================
+    // REDIRECT BERDASARKAN ROLE
+    // ===============================
+    if ($user['role'] === 'peserta') {
+        header("Location: index.php?page=dashboard_frontend");
+    } else {
+        header("Location: index.php?page=dashboard_backend");
+    }
+    exit;
+}
+
 
     public function logout() {
         // 1. Kosongkan semua variabel session
